@@ -12,7 +12,20 @@ module.exports = async (req, res) => {
   const orderData = req.body || {};
 
   try {
-    const generatedKey = `KEY-${Math.random().toString(36).substring(7).toUpperCase()}`;
+    // --- NEW KEY GENERATION LOGIC ---
+    // Generates a 5-character string of random uppercase letters and numbers
+    const getChunk = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let chunk = '';
+      for (let i = 0; i < 5; i++) {
+        chunk += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return chunk;
+    };
+
+    // Combines 3 chunks together with dashes (e.g., IHDUD-IQIHD-OQUHD)
+    const generatedKey = `${getChunk()}-${getChunk()}-${getChunk()}`;
+    // --------------------------------
 
     const logEntry = {
       orderId: orderData.order_id || 'Unknown',
@@ -21,7 +34,6 @@ module.exports = async (req, res) => {
       timestamp: new Date().toISOString()
     };
     
-    // Using Upstash redis to push the data
     await redis.lpush('generated_keys', logEntry);
 
     res.status(200).send(generatedKey);
