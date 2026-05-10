@@ -4,19 +4,19 @@ const redis = Redis.fromEnv();
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  const authHeader = req.headers['authorization'];
-  if (authHeader !== process.env.SELLAUTH_SECRET) {
+  // --- NEW SECURITY CHECK ---
+  // This looks at the end of the URL for the secret password!
+  const urlSecret = req.query.secret;
+  if (urlSecret !== process.env.SELLAUTH_SECRET) {
+    console.error("Unauthorized request. Wrong or missing secret in URL.");
     return res.status(401).send('Unauthorized');
   }
+  // --------------------------
 
   const payload = req.body || {};
   const adminInvoiceId = payload.invoice_id || payload.id || payload.order_id;
 
   try {
-    // --- DETECTIVE CODE ---
-    console.log("VERCEL CAN SEE THESE KEYS:", Object.keys(process.env));
-    // ----------------------
-
     const getChunk = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let chunk = '';
@@ -99,14 +99,10 @@ module.exports = async (req, res) => {
         if (!discordRes.ok) {
            const errText = await discordRes.text();
            console.error(`DISCORD REJECTED IT: Status ${discordRes.status} - ${errText}`);
-        } else {
-           console.log("Discord Webhook sent successfully!");
         }
       } catch (discordErr) {
         console.error("Network error sending to Discord:", discordErr);
       }
-    } else {
-       console.log("No DISCORD_WEBHOOK_URL found in Vercel settings.");
     }
 
     res.status(200).send(generatedKey);
