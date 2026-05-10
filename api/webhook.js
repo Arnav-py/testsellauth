@@ -5,7 +5,9 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
   const authHeader = req.headers['authorization'];
-  if (authHeader !== process.env.SELLAUTH_SECRET) return res.status(401).send('Unauthorized');
+  if (authHeader !== process.env.SELLAUTH_SECRET) {
+    return res.status(401).send('Unauthorized');
+  }
 
   const payload = req.body || {};
   const adminInvoiceId = payload.invoice_id || payload.id || payload.order_id;
@@ -14,7 +16,9 @@ module.exports = async (req, res) => {
     const getChunk = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let chunk = '';
-      for (let i = 0; i < 5; i++) chunk += chars.charAt(Math.floor(Math.random() * chars.length));
+      for (let i = 0; i < 5; i++) {
+        chunk += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
       return chunk;
     };
     const generatedKey = `${getChunk()}-${getChunk()}-${getChunk()}`;
@@ -33,17 +37,23 @@ module.exports = async (req, res) => {
             'Content-Type': 'application/json'
           }
         });
+        
         const realInvoice = await sellAuthRes.json();
 
         if (realInvoice && !realInvoice.error) {
            const invoiceData = realInvoice.data || realInvoice;
+           
            finalOrderId = invoiceData.public_id || invoiceData.invoice_id || invoiceData.id || finalOrderId;
            finalQuantity = invoiceData.quantity || finalQuantity;
-           if (invoiceData.product && invoiceData.product.title) finalProduct = invoiceData.product.title;
-           else if (invoiceData.product_name) finalProduct = invoiceData.product_name;
+           
+           if (invoiceData.product && invoiceData.product.title) {
+               finalProduct = invoiceData.product.title;
+           } else if (invoiceData.product_name) {
+               finalProduct = invoiceData.product_name;
+           }
         }
       } catch (apiError) {
-        console.error("Failed API Fetch:", apiError);
+        console.error("Failed to fetch from SellAuth API:", apiError);
       }
     }
 
@@ -58,13 +68,13 @@ module.exports = async (req, res) => {
     await redis.lpush('generated_keys', logEntry);
     await redis.set(`license:${generatedKey}`, logEntry);
 
-        // --- NEW: 6. SEND TO DISCORD WEBHOOK ---
+    // --- DISCORD WEBHOOK LOGIC ---
     if (process.env.DISCORD_WEBHOOK_URL) {
       const discordEmbed = {
         username: "SellAuth Delivery System",
         embeds: [{
           title: "🛍️ New Order & Key Generated!",
-          color: 3092790, // A nice green success color
+          color: 3092790,
           fields: [
             { name: "📦 Product", value: `\`${finalProduct || 'Unknown'}\``, inline: true },
             { name: "🔢 Quantity", value: `\`${finalQuantity || '1'}\``, inline: true },
@@ -82,7 +92,6 @@ module.exports = async (req, res) => {
           body: JSON.stringify(discordEmbed)
         });
         
-        // This checks if Discord actually accepted it!
         if (!discordRes.ok) {
            const errText = await discordRes.text();
            console.error(`DISCORD REJECTED IT: Status ${discordRes.status} - ${errText}`);
@@ -95,4 +104,10 @@ module.exports = async (req, res) => {
     } else {
        console.log("No DISCORD_WEBHOOK_URL found in Vercel settings.");
     }
-    // ---------------------------------------
+
+    res.status(200).send(generatedKey);
+  } catch (error) {
+    console.error("Webhook Error:", error);
+    res.status(500).send("Error generating key");
+  }
+};
