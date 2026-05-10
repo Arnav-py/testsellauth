@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Delivery Dashboard</title>
+    <style>
+      body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; color: #333; }
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; }
+      th { background: #f4f4f4; padding: 12px; }
+      td { padding: 12px; border-bottom: 1px solid #ddd; }
+      code { background: #eee; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>🔑 Delivery Dashboard</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Order ID</th>
+          <th>Product</th>
+          <th>Key Delivered</th>
+        </tr>
+      </thead>
+      <tbody id="keyTable">
+        <tr><td colspan="4">Loading keys...</td></tr>
+      </tbody>
+    </table>
+
+    <script>
+      // This grabs the keys from your database and puts them in the table
+      fetch('/api/keys')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById('keyTable');
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No keys generated yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = data.map(entry => `
+            <tr>
+              <td>${new Date(entry.timestamp).toLocaleString()}</td>
+              <td>${entry.orderId}</td>
+              <td>${entry.product}</td>
+              <td><code>${entry.key}</code></td>
+            </tr>
+          `).join('');
+        })
+        .catch(err => {
+          document.getElementById('keyTable').innerHTML = '<tr><td colspan="4">Error loading keys. Check Vercel logs.</td></tr>';
+        });
+    </script>
+  </body>
+</html>
