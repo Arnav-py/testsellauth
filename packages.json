@@ -1,6 +1,6 @@
 {
   "name": "sellauth-delivery",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "@upstash/redis": "^1.30.0"
   }
