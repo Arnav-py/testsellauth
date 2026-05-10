@@ -4,67 +4,45 @@ const redis = Redis.fromEnv();
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  // --- NEW SECURITY CHECK ---
-  // This looks at the end of the URL for the secret password!
+  // --- 1. SECURITY CHECK ---
   const urlSecret = req.query.secret;
   if (urlSecret !== process.env.SELLAUTH_SECRET) {
     console.error("Unauthorized request. Wrong or missing secret in URL.");
     return res.status(401).send('Unauthorized');
   }
-  // --------------------------
 
   const payload = req.body || {};
-  const adminInvoiceId = payload.invoice_id || payload.id || payload.order_id;
 
   try {
+    // --- 2. EXTRACT RICH DATA FROM SELLAUTH ---
+    // Grabbing all the cool details from the massive payload you provided
+    const finalOrderId = payload.unique_id || payload.invoice_id || "Unknown_ID";
+    const finalQuantity = parseInt(payload.item?.quantity || payload.amount || 1);
+    const finalProduct = payload.item?.product?.name || "Dynamic Item";
+    const customerEmail = payload.email || "Unknown Buyer";
+    const discordUser = payload.customer?.discord_username || "Not Provided";
+    const gateway = payload.gateway || "Unknown";
+    const totalPrice = `$${payload.item?.total_price_usd || payload.price_usd || "0.00"} USD`;
+    const couponUsed = payload.coupon?.code || "None";
+
+    // --- 3. GENERATE A SINGLE MASTER KEY ---
     const getChunk = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let chunk = '';
-      for (let i = 0; i < 5; i++) {
-        chunk += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
+      for (let i = 0; i < 5; i++) chunk += chars.charAt(Math.floor(Math.random() * chars.length));
       return chunk;
     };
+    // Only 1 key is generated, regardless of quantity!
     const generatedKey = `${getChunk()}-${getChunk()}-${getChunk()}`;
 
-    let finalOrderId = adminInvoiceId || "Unknown";
-    let finalProduct = payload.product_name || "Dynamic Item";
-    let finalQuantity = payload.quantity || 1;
-
-    if (adminInvoiceId && process.env.SELLAUTH_API_KEY && process.env.SELLAUTH_SHOP_ID) {
-      try {
-        const apiUrl = `https://api.sellauth.com/v1/shops/${process.env.SELLAUTH_SHOP_ID}/invoices/${adminInvoiceId}`;
-        const sellAuthRes = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${process.env.SELLAUTH_API_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        const realInvoice = await sellAuthRes.json();
-
-        if (realInvoice && !realInvoice.error) {
-           const invoiceData = realInvoice.data || realInvoice;
-           
-           finalOrderId = invoiceData.public_id || invoiceData.invoice_id || invoiceData.id || finalOrderId;
-           finalQuantity = invoiceData.quantity || finalQuantity;
-           
-           if (invoiceData.product && invoiceData.product.title) {
-               finalProduct = invoiceData.product.title;
-           } else if (invoiceData.product_name) {
-               finalProduct = invoiceData.product_name;
-           }
-        }
-      } catch (apiError) {
-        console.error("Failed to fetch from SellAuth API:", apiError);
-      }
-    }
-
+    // --- 4. SAVE TO UPSTASH DATABASE ---
     const logEntry = {
       orderId: finalOrderId,
       product: finalProduct,
-      quantity: finalQuantity,
+      quantity: finalQuantity, // Logs the real amount they bought
+      email: customerEmail,
+      discord: discordUser,
+      price: totalPrice,
       key: generatedKey,
       timestamp: new Date().toISOString()
     };
@@ -72,40 +50,59 @@ module.exports = async (req, res) => {
     await redis.lpush('generated_keys', logEntry);
     await redis.set(`license:${generatedKey}`, logEntry);
 
-    // --- DISCORD WEBHOOK LOGIC ---
+    // --- 5. ENHANCED DISCORD WEBHOOK UI ---
     if (process.env.DISCORD_WEBHOOK_URL) {
-      const discordEmbed = {
+      const discordPayload = {
         username: "SellAuth Delivery System",
         embeds: [{
-          title: "🛍️ New Order & Key Generated!",
-          color: 3092790,
+          title: "🎉 New Order & Key Generated!",
+          color: 5763719, // A vibrant, clean green
+          description: `Successfully processed an order and secured **1** master license key for a quantity of **${finalQuantity}**.`,
           fields: [
-            { name: "📦 Product", value: `\`${finalProduct || 'Unknown'}\``, inline: true },
-            { name: "🔢 Quantity", value: `\`${finalQuantity || '1'}\``, inline: true },
-            { name: "🧾 Invoice ID", value: `\`${finalOrderId || 'Unknown'}\``, inline: true },
-            { name: "🔑 Delivered Key", value: `\`\`\`${generatedKey || 'ERROR'}\`\`\``, inline: false }
+            { name: "📦 Product", value: `\`${finalProduct}\``, inline: true },
+            { name: "🔢 Quantity", value: `\`${finalQuantity}\``, inline: true },
+            { name: "💵 Total Paid", value: `\`${totalPrice}\``, inline: true },
+            { name: "👤 Buyer Email", value: `\`${customerEmail}\``, inline: true },
+            { name: "👾 Discord", value: `\`${discordUser}\``, inline: true },
+            { name: "💳 Payment Method", value: `\`${gateway}\``, inline: true },
+            { name: "🏷️ Coupon Used", value: `\`${couponUsed}\``, inline: true },
+            { name: "🧾 Invoice ID", value: `\`${finalOrderId}\``, inline: true },
+            // Uses a 'fix' codeblock to highlight the key in yellow text in Discord
+            { name: "🔑 Delivered Key", value: `\`\`\`fix\n${generatedKey}\n\`\`\``, inline: false }
           ],
+          footer: { text: "SellAuth Security & Database System" },
           timestamp: new Date().toISOString()
-        }]
+        }],
+        components: [
+          {
+            type: 1, // ActionRow
+            components: [
+              {
+                type: 2, // Button
+                style: 5, // Link Button
+                label: "🧾 View Full Invoice",
+                url: `https://checkout.sellauth.com/invoice/${finalOrderId}` 
+              }
+            ]
+          }
+        ]
       };
 
       try {
-        const discordRes = await fetch(process.env.DISCORD_WEBHOOK_URL, {
+        await fetch(process.env.DISCORD_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(discordEmbed)
+          body: JSON.stringify(discordPayload)
         });
-        
-        if (!discordRes.ok) {
-           const errText = await discordRes.text();
-           console.error(`DISCORD REJECTED IT: Status ${discordRes.status} - ${errText}`);
-        }
       } catch (discordErr) {
         console.error("Network error sending to Discord:", discordErr);
       }
     }
 
+    // --- 6. DELIVER THE KEY TO SELLAUTH ---
+    res.setHeader('Content-Type', 'text/plain');
     res.status(200).send(generatedKey);
+
   } catch (error) {
     console.error("Webhook Error:", error);
     res.status(500).send("Error generating key");
