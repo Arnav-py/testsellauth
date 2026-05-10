@@ -58,30 +58,41 @@ module.exports = async (req, res) => {
     await redis.lpush('generated_keys', logEntry);
     await redis.set(`license:${generatedKey}`, logEntry);
 
+        // --- NEW: 6. SEND TO DISCORD WEBHOOK ---
     if (process.env.DISCORD_WEBHOOK_URL) {
       const discordEmbed = {
         username: "SellAuth Delivery System",
         embeds: [{
           title: "🛍️ New Order & Key Generated!",
-          color: 3092790,
+          color: 3092790, // A nice green success color
           fields: [
-            { name: "📦 Product", value: `\`${finalProduct}\``, inline: true },
-            { name: "🔢 Quantity", value: `\`${finalQuantity}\``, inline: true },
-            { name: "🧾 Invoice ID", value: `\`${finalOrderId}\``, inline: true },
-            { name: "🔑 Delivered Key", value: `\`\`\`${generatedKey}\`\`\``, inline: false }
+            { name: "📦 Product", value: `\`${finalProduct || 'Unknown'}\``, inline: true },
+            { name: "🔢 Quantity", value: `\`${finalQuantity || '1'}\``, inline: true },
+            { name: "🧾 Invoice ID", value: `\`${finalOrderId || 'Unknown'}\``, inline: true },
+            { name: "🔑 Delivered Key", value: `\`\`\`${generatedKey || 'ERROR'}\`\`\``, inline: false }
           ],
           timestamp: new Date().toISOString()
         }]
       };
-      await fetch(process.env.DISCORD_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(discordEmbed)
-      });
-    }
 
-    res.status(200).send(generatedKey);
-  } catch (error) {
-    res.status(500).send("Error");
-  }
-};
+      try {
+        const discordRes = await fetch(process.env.DISCORD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(discordEmbed)
+        });
+        
+        // This checks if Discord actually accepted it!
+        if (!discordRes.ok) {
+           const errText = await discordRes.text();
+           console.error(`DISCORD REJECTED IT: Status ${discordRes.status} - ${errText}`);
+        } else {
+           console.log("Discord Webhook sent successfully!");
+        }
+      } catch (discordErr) {
+        console.error("Network error sending to Discord:", discordErr);
+      }
+    } else {
+       console.log("No DISCORD_WEBHOOK_URL found in Vercel settings.");
+    }
+    // ---------------------------------------
