@@ -10,10 +10,8 @@ module.exports = async (req, res) => {
   }
 
   const orderData = req.body || {};
-
+  
   try {
-    // --- NEW KEY GENERATION LOGIC ---
-    // Generates a 5-character string of random uppercase letters and numbers
     const getChunk = () => {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let chunk = '';
@@ -22,19 +20,26 @@ module.exports = async (req, res) => {
       }
       return chunk;
     };
-
-    // Combines 3 chunks together with dashes (e.g., IHDUD-IQIHD-OQUHD)
     const generatedKey = `${getChunk()}-${getChunk()}-${getChunk()}`;
-    // --------------------------------
+
+    // Capture everything
+    const exactOrderId = orderData.invoice_id || orderData.id || orderData.order_id || orderData.uniqid || 'Unknown';
+    const exactProduct = orderData.product_name || orderData.product || orderData.title || 'Dynamic Item';
+    const exactQuantity = orderData.quantity || orderData.qty || 1;
 
     const logEntry = {
-      orderId: orderData.order_id || 'Unknown',
-      product: orderData.product_name || 'Dynamic Item',
+      orderId: exactOrderId,
+      product: exactProduct,
+      quantity: exactQuantity,
       key: generatedKey,
       timestamp: new Date().toISOString()
     };
     
+    // 1. Push to the list (For your HTML Dashboard)
     await redis.lpush('generated_keys', logEntry);
+
+    // 2. Save a direct reference (For your Discord Bot to fetch instantly)
+    await redis.set(`license:${generatedKey}`, logEntry);
 
     res.status(200).send(generatedKey);
   } catch (error) {
