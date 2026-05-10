@@ -11,6 +11,10 @@ module.exports = async (req, res) => {
 
   const payload = req.body || {};
   const adminInvoiceId = payload.invoice_id || payload.id || payload.order_id;
+  
+  try {
+    // --- THIS WILL PRINT EVERY VARIABLE VERCEL CAN SEE ---
+    console.log("VERCEL CAN SEE THESE KEYS:", Object.keys(process.env));
 
   try {
     const getChunk = () => {
