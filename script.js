@@ -1,104 +1,99 @@
 lucide.createIcons();
 let allKeys = [];
 
+// Navigation Logic
+function showDetail(index) {
+    const item = allKeys[index];
+    if(!item) return;
+
+    // Hide table, show detail
+    document.getElementById('view-table').style.display = 'none';
+    document.getElementById('view-detail').style.display = 'block';
+
+    // Populate Data
+    const dateObj = new Date(item.timestamp || item.generated_at || Date.now());
+    
+    document.getElementById('det-id').innerText = item.orderId || 'MANUAL-GEN-' + Math.floor(Math.random()*10000);
+    document.getElementById('det-key').innerText = item.key || 'N/A';
+    document.getElementById('det-date').innerText = dateObj.toLocaleString('en-GB');
+    document.getElementById('det-email').innerText = item.email || 'Not Provided';
+    
+    // Formatting Price (Mimicking the image)
+    const price = item.amount || item.price || '0.10';
+    document.getElementById('det-paid').innerText = `+$${price}`;
+    
+    // Formatting Discord ID if claimed
+    const discordLabel = document.getElementById('det-discord');
+    if(item.claimed_by) {
+        discordLabel.innerText = item.claimed_by;
+        discordLabel.classList.add('blue-text');
+    } else {
+        discordLabel.innerText = 'Not Claimed';
+        discordLabel.classList.remove('blue-text');
+    }
+}
+
+function showTable() {
+    document.getElementById('view-detail').style.display = 'none';
+    document.getElementById('view-table').style.display = 'block';
+}
+
+function copyDetailKey() {
+    const keyText = document.getElementById('det-key').innerText;
+    navigator.clipboard.writeText(keyText);
+    alert("Product Key Copied!"); // Simple alert matching the minimal style
+}
+
+// Data Fetching
 async function fetchKeys() {
-    const feedList = document.getElementById('feedList');
+    const tbody = document.getElementById('keyTable');
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #8b949e;">Refreshing data...</td></tr>`;
     
     try {
         const response = await fetch('/api/keys');
         const data = await response.json();
         
-        // I added a strict parsing layer here to fix the "glitch"
         allKeys = data.map(entry => {
             try { return typeof entry === 'string' ? JSON.parse(entry) : entry; }
-            catch (e) { return null; } // Drops corrupted Upstash entries silently
+            catch (e) { return null; }
         }).filter(item => item !== null);
 
-        renderFeed(allKeys);
+        renderTable(allKeys);
     } catch (err) {
-        feedList.innerHTML = `<div class="loading-state" style="color:#ef4444;"><i data-lucide="alert-triangle"></i> Database Error</div>`;
-        lucide.createIcons();
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f85149;">Database Error</td></tr>`;
     }
 }
 
-function renderFeed(dataArray) {
-    const feedList = document.getElementById('feedList');
-    
+function renderTable(dataArray) {
+    const tbody = document.getElementById('keyTable');
     if (dataArray.length === 0) {
-        feedList.innerHTML = `<div class="loading-state">No orders found.</div>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #8b949e;">No invoices found.</td></tr>`;
         return;
     }
 
-    feedList.innerHTML = dataArray.map((item, index) => {
-        const dateObj = new Date(item.timestamp || item.generated_at || Date.now());
-        const shortDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
-        // Ensure no glitches if data is missing
-        const safeOrder = item.orderId || 'MANUAL';
-        const safeProduct = item.product || 'Unknown Product';
+    tbody.innerHTML = dataArray.map((item, index) => {
+        const safeOrder = item.orderId || 'MANUAL-GEN';
+        const safeProduct = item.product || 'L'; // 'L' to match your image
+        const safePrice = item.amount || item.price || '0.10';
+        const safeEmail = item.email ? (item.email.length > 15 ? item.email.substring(0, 15) + '...' : item.email) : 'Not Provided';
+        const gateway = item.gateway || 'Litecoin';
 
-        // Store index so we can pull full data on click
         return `
-            <div class="order-card" onclick="viewDetails(${index}, this)">
-                <div class="card-top">
-                    <span class="card-id">#${safeOrder}</span>
-                    <span>${shortDate}</span>
-                </div>
-                <div class="card-product">${safeProduct}</div>
-            </div>
+            <tr class="clickable-row" onclick="showDetail(${index})">
+                <td><span class="badge blue">Manual</span></td>
+                <td class="monospace">${safeOrder}</td>
+                <td>${safeProduct}</td>
+                <td class="monospace">${item.key ? item.key.substring(0, 10) + '...' : 'N/A'}</td>
+                <td class="text-green">+$${safePrice}</td>
+                <td style="color: #8b949e;">
+                    <i data-lucide="gem" style="width: 14px; vertical-align: middle; margin-right: 4px;"></i> ${gateway}
+                </td>
+                <td style="color: #8b949e;">${safeEmail}</td>
+            </tr>
         `;
     }).join('');
-}
-
-// THIS LOADS THE SEPARATE PAGE EFFECT
-function viewDetails(index, cardElement) {
-    // 1. Manage Active Card Styling
-    document.querySelectorAll('.order-card').forEach(c => c.classList.remove('active'));
-    cardElement.classList.add('active');
-
-    // 2. Hide Empty State, Show Content
-    document.getElementById('emptyState').style.display = 'none';
-    const contentBox = document.getElementById('detailContent');
     
-    // Quick trick to restart the CSS animation every click
-    contentBox.style.display = 'none';
-    setTimeout(() => { contentBox.style.display = 'block'; }, 10);
-
-    // 3. Inject Data
-    const item = allKeys[index];
-    const dateObj = new Date(item.timestamp || item.generated_at || Date.now());
-
-    document.getElementById('view-order-id').innerText = `#${item.orderId || 'MANUAL-GEN'}`;
-    document.getElementById('view-date').innerText = dateObj.toLocaleString();
-    document.getElementById('view-key').innerText = item.key || 'ERR: NO KEY FOUND';
-    document.getElementById('view-product').innerText = item.product || 'Unknown';
-    document.getElementById('view-email').innerText = item.email || 'Not Provided';
-    document.getElementById('view-qty').innerText = item.quantity || '1';
-}
-
-// CLICK TO COPY FUNCTION
-function copyKeyFromElement(element) {
-    const keyText = element.innerText;
-    if (!keyText || keyText.includes('ERR')) return;
-    
-    navigator.clipboard.writeText(keyText).then(() => {
-        // Visual feedback on the block itself
-        element.style.background = 'rgba(16, 185, 129, 0.1)';
-        element.style.borderColor = '#10B981';
-        element.style.color = '#10B981';
-        
-        // Show Toast
-        const toast = document.getElementById('toast');
-        toast.classList.add('show');
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-            // Reset block colors back to Azort blue
-            element.style.background = '';
-            element.style.borderColor = '';
-            element.style.color = '';
-        }, 2000);
-    });
+    lucide.createIcons();
 }
 
 // Live Search
@@ -106,10 +101,11 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
     const filtered = allKeys.filter(item => 
         (item.orderId && item.orderId.toLowerCase().includes(term)) ||
-        (item.product && item.product.toLowerCase().includes(term)) ||
-        (item.email && item.email.toLowerCase().includes(term))
+        (item.email && item.email.toLowerCase().includes(term)) ||
+        (item.key && item.key.toLowerCase().includes(term))
     );
-    renderFeed(filtered);
+    renderTable(filtered);
 });
 
+// Init
 window.onload = fetchKeys;
