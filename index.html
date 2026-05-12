@@ -3,32 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azort | Enterprise Command Center</title>
+    <title>Azort | Core Backend</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
     <div id="toast-container"></div>
-    <div id="loader-overlay" class="hidden">
-        <div class="spinner"></div>
-    </div>
 
     <div id="auth-guard">
-        <div class="auth-box" id="auth-box">
-            <div class="auth-icon"><i data-lucide="lock"></i></div>
-            <h1>System Locked</h1>
-            <p>Enter administrative credentials.</p>
-            
-            <div class="input-group">
-                <input type="password" id="auth-input" placeholder="Enter Passphrase" autocomplete="off">
-                <div class="focus-border"></div>
-            </div>
-            
-            <button id="auth-btn" class="btn-primary" onclick="app.verify()">Unlock System</button>
-            <p id="auth-error" class="error-msg">Invalid credentials. Attempt logged.</p>
+        <div class="auth-box">
+            <i data-lucide="terminal" class="auth-icon"></i>
+            <h1>SYSTEM.LOCK</h1>
+            <input type="password" id="auth-input" placeholder="ENTER PASSPHRASE" autocomplete="off">
+            <button class="btn-neon" onclick="app.verify()">AUTHORIZE</button>
+            <p id="auth-error" class="error-msg">ACCESS DENIED.</p>
         </div>
     </div>
 
@@ -36,129 +27,165 @@
         
         <nav class="topbar">
             <div class="brand">
-                <div class="brand-logo"><i data-lucide="shield-check"></i></div>
-                <span>Azort <strong>OS</strong></span>
+                <i data-lucide="zap" class="neon-text"></i>
+                <span>AZORT <strong>CORE</strong></span>
             </div>
             <div class="topbar-right">
-                <div class="status-indicator">
-                    <span class="pulse"></span> System Live
-                </div>
-                <button class="icon-btn" onclick="app.logout()"><i data-lucide="log-out"></i></button>
+                <span class="status-badge"><span class="pulse"></span> ONLINE</span>
+                <button class="icon-btn" onclick="app.logout()"><i data-lucide="power"></i></button>
             </div>
         </nav>
 
         <div class="app-content">
             
             <section id="view-home" class="view">
-                <header class="view-header stagger-1">
-                    <h2>Command Center</h2>
-                    <p>Infrastructure overview and quick actions.</p>
-                </header>
-
-                <div class="bento-grid stagger-2">
+                <div class="header-block">
+                    <h2>COMMAND CENTER</h2>
+                </div>
+                <div class="bento-grid">
                     <div class="bento-card" onclick="app.navigate('keys')">
-                        <div class="bento-icon blue"><i data-lucide="key"></i></div>
-                        <h3>License Keys</h3>
-                        <p>Live feed of all generated keys, redemptions, and order flow from your databases.</p>
-                        <div class="bento-footer">Active <i data-lucide="arrow-right"></i></div>
+                        <i data-lucide="key" class="card-icon green"></i>
+                        <h3>LICENSE KEYS</h3>
+                        <p>Database synchronization, manual generation, and redemption logs.</p>
                     </div>
-
                     <div class="bento-card" onclick="app.navigate('stats')">
-                        <div class="bento-icon green"><i data-lucide="bar-chart-3"></i></div>
-                        <h3>Analytics</h3>
-                        <p>Revenue graphs, payment distributions, and system volume metrics.</p>
-                        <div class="bento-footer">Live <i data-lucide="arrow-right"></i></div>
+                        <i data-lucide="activity" class="card-icon blue"></i>
+                        <h3>ANALYTICS</h3>
+                        <p>Financial metrics, volume tracking, and system health.</p>
                     </div>
-
                     <div class="bento-card" onclick="app.navigate('crm')">
-                        <div class="bento-icon purple"><i data-lucide="users"></i></div>
-                        <h3>Customer CRM</h3>
-                        <p>Manage buyers, view purchase histories, and configure access control lists.</p>
-                        <div class="bento-footer">Secure <i data-lucide="arrow-right"></i></div>
+                        <i data-lucide="users" class="card-icon purple"></i>
+                        <h3>CUSTOMER CRM</h3>
+                        <p>Buyer history, discord syncing, and IP/Email blacklisting.</p>
                     </div>
-
                     <div class="bento-card" onclick="app.navigate('settings')">
-                        <div class="bento-icon gray"><i data-lucide="settings"></i></div>
-                        <h3>System Configuration</h3>
-                        <p>Database tokens, webhook integrations, and API security policies.</p>
-                        <div class="bento-footer">Restricted <i data-lucide="arrow-right"></i></div>
+                        <i data-lucide="cpu" class="card-icon red"></i>
+                        <h3>SYSTEM CONFIG</h3>
+                        <p>API Tokens, Discord bot connections, and global settings.</p>
                     </div>
                 </div>
             </section>
 
             <section id="view-keys" class="view hidden">
-                <header class="view-header flex-between">
-                    <div>
-                        <h2><i data-lucide="key" class="header-icon"></i> Invoice & Keys</h2>
-                        <p>Monitoring secure key generation.</p>
-                    </div>
-                    <button class="btn-outline" onclick="app.navigate('home')"><i data-lucide="arrow-left"></i> Back</button>
-                </header>
-
-                <div class="controls-bar">
-                    <div class="search-wrap">
-                        <i data-lucide="search"></i>
-                        <input type="text" id="key-search" placeholder="Search ID, Email, or Product...">
-                    </div>
-                    <button class="btn-outline" onclick="app.fetchKeys()"><i data-lucide="refresh-cw"></i> Sync</button>
+                <div class="header-block flex-between">
+                    <h2><i data-lucide="key" class="header-icon neon-text"></i> KEYS & INVOICES</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
                 </div>
-
-                <div class="table-card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Status</th><th>Order ID</th><th>Product</th><th>Price</th><th>License Key</th><th>Customer</th>
-                            </tr>
-                        </thead>
-                        <tbody id="keys-tbody">
-                            </tbody>
+                
+                <div class="panel">
+                    <div class="panel-tools">
+                        <input type="text" id="keys-search" class="search-input" placeholder="Search ID or Email..." onkeyup="app.filterKeys()">
+                        <button class="btn-neon small" onclick="app.fetchKeys()">SYNC DB</button>
+                    </div>
+                    <table class="data-table">
+                        <thead><tr><th>STATUS</th><th>ORDER ID</th><th>PRODUCT</th><th>KEY</th><th>ACTIONS</th></tr></thead>
+                        <tbody id="keys-tbody"></tbody>
                     </table>
+                    <div class="pagination" id="keys-pagination"></div>
                 </div>
             </section>
 
             <section id="view-stats" class="view hidden">
-                <header class="view-header flex-between">
-                    <div>
-                        <h2><i data-lucide="bar-chart-3" class="header-icon"></i> Analytics</h2>
-                        <p>Financial and system metrics.</p>
-                    </div>
-                    <button class="btn-outline" onclick="app.navigate('home')"><i data-lucide="arrow-left"></i> Back</button>
-                </header>
+                <div class="header-block flex-between">
+                    <h2><i data-lucide="activity" class="header-icon blue-text"></i> ANALYTICS</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                </div>
                 
-                <div class="stats-grid">
-                    <div class="chart-card large">
-                        <h3>Gross Volume (7 Days)</h3>
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                    <div class="chart-card small">
-                        <h3>Gateways</h3>
-                        <canvas id="gatewayChart"></canvas>
-                    </div>
+                <div class="stats-cards">
+                    <div class="stat-box"><h4>TOTAL REVENUE</h4><h2 class="neon-text">$4,290.50</h2></div>
+                    <div class="stat-box"><h4>KEYS GENERATED</h4><h2 class="blue-text">1,402</h2></div>
+                    <div class="stat-box"><h4>ACTIVE CUSTOMERS</h4><h2 class="purple-text">892</h2></div>
+                </div>
+                
+                <div class="panel" style="margin-top: 2rem;">
+                    <h3>GROSS VOLUME (30 DAYS)</h3>
+                    <div style="height: 300px; margin-top: 1rem;"><canvas id="revenueChart"></canvas></div>
                 </div>
             </section>
 
             <section id="view-crm" class="view hidden">
-                <header class="view-header flex-between">
-                    <h2><i data-lucide="users" class="header-icon"></i> Customer CRM</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">Back</button>
-                </header>
-                <div class="empty-state">
-                    <i data-lucide="database"></i><p>CRM Module Initializing...</p>
+                <div class="header-block flex-between">
+                    <h2><i data-lucide="users" class="header-icon purple-text"></i> CRM DATABASE</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-tools">
+                        <input type="text" id="crm-search" class="search-input" placeholder="Search Customer..." onkeyup="app.filterCRM()">
+                    </div>
+                    <table class="data-table">
+                        <thead><tr><th>CUSTOMER E-MAIL</th><th>TOTAL SPEND</th><th>ORDERS</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+                        <tbody id="crm-tbody"></tbody>
+                    </table>
+                    <div class="pagination" id="crm-pagination"></div>
                 </div>
             </section>
 
             <section id="view-settings" class="view hidden">
-                <header class="view-header flex-between">
-                    <h2><i data-lucide="settings" class="header-icon"></i> Settings</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">Back</button>
-                </header>
-                <div class="empty-state">
-                    <i data-lucide="lock"></i><p>Configuration Locked by SuperAdmin.</p>
+                <div class="header-block flex-between">
+                    <h2><i data-lucide="cpu" class="header-icon red-text"></i> CONFIGURATION</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="panel">
+                        <h3><i data-lucide="database"></i> UPSTASH REDIS</h3>
+                        <div class="form-group">
+                            <label>REST URL</label>
+                            <input type="password" value="https://eu1-liberal-donkey-39485.upstash.io">
+                        </div>
+                        <div class="form-group">
+                            <label>REST TOKEN</label>
+                            <input type="password" value="AZORT_SECRET_TOKEN_12345">
+                        </div>
+                        <button class="btn-neon small">SAVE DB CONFIG</button>
+                    </div>
+
+                    <div class="panel">
+                        <h3><i data-lucide="bot"></i> DISCORD INTEGRATION</h3>
+                        <div class="form-group">
+                            <label>BOT TOKEN</label>
+                            <input type="password" placeholder="Paste Discord Bot Token">
+                        </div>
+                        <div class="form-group">
+                            <label>ADMIN ROLE ID</label>
+                            <input type="text" value="120394857203948572">
+                        </div>
+                        <button class="btn-neon small blue-bg">UPDATE BOT</button>
+                    </div>
+
+                    <div class="panel full-width">
+                        <h3><i data-lucide="shield"></i> SECURITY SETTINGS</h3>
+                        <div class="toggle-row">
+                            <div>
+                                <h4>MAINTENANCE MODE</h4>
+                                <p>Disables key redemption on the Discord Bot instantly.</p>
+                            </div>
+                            <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4>STRICT IP LOCKING</h4>
+                                <p>Bans users automatically if multiple IPs are detected on one key.</p>
+                            </div>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
                 </div>
             </section>
 
         </div>
     </main>
+
+    <div id="side-drawer" class="drawer">
+        <div class="drawer-header">
+            <h3>ORDER DETAILS</h3>
+            <button class="icon-btn" onclick="app.closeDrawer()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="drawer-content" id="drawer-data">
+            </div>
+    </div>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="app.closeDrawer()"></div>
 
     <script src="script.js"></script>
 </body>
