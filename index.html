@@ -3,75 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azort | Command Center</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <div id="toast" class="toast">
-        <i data-lucide="check-circle"></i> Product Key Copied!
-    </div>
 
-    <div class="app-container">
+    <div class="container">
         
-        <aside class="order-feed">
-            <div class="feed-header">
-                <h2><i data-lucide="shield"></i> Azort</h2>
-                <div class="search-wrapper">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="searchInput" placeholder="Search orders...">
-                </div>
-            </div>
-            
-            <div class="feed-list" id="feedList">
-                <div class="loading-state">
-                    <i data-lucide="loader" class="spinner"></i> Loading feed...
-                </div>
-                </div>
-        </aside>
-
-        <main class="detail-view" id="detailView">
-            <div class="empty-state" id="emptyState">
-                <i data-lucide="mouse-pointer-click"></i>
-                <p>Select an order to view product details</p>
+        <div id="view-table">
+            <div class="page-header">
+                <h1>Invoices</h1>
+                <p>Browse and manage your generated keys.</p>
             </div>
 
-            <div class="detail-content" id="detailContent" style="display: none;">
-                <header class="detail-header">
-                    <div>
-                        <span class="badge success">Success</span>
-                        <h1 id="view-order-id">#Order ID</h1>
-                        <p class="timestamp" id="view-date">Date</p>
-                    </div>
-                </header>
-
-                <div class="key-section">
-                    <p class="section-label">Product Key (Click to Copy)</p>
-                    <div class="key-display" id="view-key" onclick="copyKeyFromElement(this)">
-                        XXXXX-XXXXX-XXXXX
-                    </div>
+            <div class="table-controls">
+                <div class="tabs">
+                    <button class="active">Invoices</button>
                 </div>
-
-                <div class="specs-grid">
-                    <div class="spec-card">
-                        <i data-lucide="box"></i>
-                        <p class="spec-label">Product</p>
-                        <p class="spec-value" id="view-product">Name</p>
-                    </div>
-                    <div class="spec-card">
-                        <i data-lucide="mail"></i>
-                        <p class="spec-label">Customer Email</p>
-                        <p class="spec-value" id="view-email">email@domain.com</p>
-                    </div>
-                    <div class="spec-card">
-                        <i data-lucide="layers"></i>
-                        <p class="spec-label">Quantity</p>
-                        <p class="spec-value" id="view-qty">1</p>
+                <div class="actions">
+                    <button class="btn outline" onclick="fetchKeys()"><i data-lucide="refresh-cw"></i> Refresh</button>
+                    <button class="btn outline"><i data-lucide="download"></i> Export</button>
+                    <button class="btn outline"><i data-lucide="sliders-horizontal"></i> Filters</button>
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by ID or Email...">
                     </div>
                 </div>
             </div>
-        </main>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STATUS</th>
+                            <th>ID <i data-lucide="chevron-down" style="width: 12px; display: inline-block;"></i></th>
+                            <th>PRODUCT</th>
+                            <th>KEY</th>
+                            <th>PAID</th>
+                            <th>PAYMENT</th>
+                            <th>E-MAIL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keyTable">
+                        <tr><td colspan="7" class="loading">Loading invoices...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-detail" style="display: none;">
+            <button class="btn outline back-btn" onclick="showTable()">
+                <i data-lucide="arrow-left"></i> Back to Invoices
+            </button>
+
+            <div class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="file-text"></i> Order Information
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="label">ID</span>
+                        <span class="value monospace" id="det-id">...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status</span>
+                        <span class="badge green">Manually Completed</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Payment Method</span>
+                        <span class="value" id="det-gateway">Manual <i data-lucide="wallet" style="width: 14px; margin-left: 5px; color: #8b949e;"></i></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Product Key</span>
+                        <span class="value monospace blue-text cursor-pointer" id="det-key" onclick="copyDetailKey()">...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total Paid</span>
+                        <span class="value text-green" id="det-paid">+$0.00</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Created At</span>
+                        <span class="value" id="det-date">...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="user"></i> Customer Information
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <span class="label">E-mail Address</span>
+                        <span class="value" id="det-email">...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Discord ID (Claimed By)</span>
+                        <span class="value monospace" id="det-discord">Not Claimed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
