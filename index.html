@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azort | Core Backend</title>
+    <title>SellAuth | Command Center</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -15,177 +15,231 @@
 
     <div id="auth-guard">
         <div class="auth-box">
-            <i data-lucide="terminal" class="auth-icon"></i>
-            <h1>SYSTEM.LOCK</h1>
-            <input type="password" id="auth-input" placeholder="ENTER PASSPHRASE" autocomplete="off">
-            <button class="btn-neon" onclick="app.verify()">AUTHORIZE</button>
-            <p id="auth-error" class="error-msg">ACCESS DENIED.</p>
+            <div class="auth-header">
+                <i data-lucide="shield" class="icon-blue"></i>
+                <h1>Dashboard Access</h1>
+            </div>
+            <p>Please enter your administrative passphrase.</p>
+            <input type="password" id="auth-input" placeholder="••••••••" autocomplete="off">
+            <button class="btn solid w-100" onclick="app.verify()">Secure Login</button>
+            <p id="auth-error" class="error-msg">Incorrect passphrase.</p>
         </div>
     </div>
 
-    <main id="app-root" class="hidden">
+    <div id="app-root" class="hidden">
         
-        <nav class="topbar">
-            <div class="brand">
-                <i data-lucide="zap" class="neon-text"></i>
-                <span>AZORT <strong>CORE</strong></span>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i data-lucide="list"></i> SellAuth
             </div>
-            <div class="topbar-right">
-                <span class="status-badge"><span class="pulse"></span> ONLINE</span>
-                <button class="icon-btn" onclick="app.logout()"><i data-lucide="power"></i></button>
+            <nav class="nav-links">
+                <a href="#" class="nav-link active" data-target="home" onclick="app.navigate('home', this)">
+                    <i data-lucide="home"></i> Dashboard
+                </a>
+                <a href="#" class="nav-link" data-target="keys" onclick="app.navigate('keys', this)">
+                    <i data-lucide="key"></i> Invoices
+                </a>
+                <a href="#" class="nav-link" data-target="crm" onclick="app.navigate('crm', this)">
+                    <i data-lucide="users"></i> Customers
+                </a>
+                <a href="#" class="nav-link" data-target="stats" onclick="app.navigate('stats', this)">
+                    <i data-lucide="bar-chart-2"></i> Analytics
+                </a>
+                <a href="#" class="nav-link" data-target="settings" onclick="app.navigate('settings', this)">
+                    <i data-lucide="settings"></i> Settings
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn outline w-100" onclick="app.logout()">
+                    <i data-lucide="log-out"></i> Log out
+                </button>
             </div>
-        </nav>
+        </aside>
 
-        <div class="app-content">
+        <main class="main-content">
             
-            <section id="view-home" class="view">
-                <div class="header-block">
-                    <h2>COMMAND CENTER</h2>
+            <section id="view-home" class="view active">
+                <div class="page-header">
+                    <h1>Overview</h1>
+                    <p>Welcome back. Here is what's happening with your store today.</p>
                 </div>
-                <div class="bento-grid">
-                    <div class="bento-card" onclick="app.navigate('keys')">
-                        <i data-lucide="key" class="card-icon green"></i>
-                        <h3>LICENSE KEYS</h3>
-                        <p>Database synchronization, manual generation, and redemption logs.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title"><i data-lucide="dollar-sign"></i> Total Revenue</div>
+                        <div class="stat-value text-green" id="dash-rev">$0.00</div>
                     </div>
-                    <div class="bento-card" onclick="app.navigate('stats')">
-                        <i data-lucide="activity" class="card-icon blue"></i>
-                        <h3>ANALYTICS</h3>
-                        <p>Financial metrics, volume tracking, and system health.</p>
+                    <div class="stat-card">
+                        <div class="stat-title"><i data-lucide="shopping-cart"></i> Total Orders</div>
+                        <div class="stat-value" id="dash-orders">0</div>
                     </div>
-                    <div class="bento-card" onclick="app.navigate('crm')">
-                        <i data-lucide="users" class="card-icon purple"></i>
-                        <h3>CUSTOMER CRM</h3>
-                        <p>Buyer history, discord syncing, and IP/Email blacklisting.</p>
+                    <div class="stat-card">
+                        <div class="stat-title"><i data-lucide="users"></i> Unique Customers</div>
+                        <div class="stat-value" id="dash-customers">0</div>
                     </div>
-                    <div class="bento-card" onclick="app.navigate('settings')">
-                        <i data-lucide="cpu" class="card-icon red"></i>
-                        <h3>SYSTEM CONFIG</h3>
-                        <p>API Tokens, Discord bot connections, and global settings.</p>
-                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn outline" onclick="app.navigate('keys', document.querySelector('[data-target=keys]'))">View Recent Invoices</button>
+                    <button class="btn outline" onclick="app.fetchData()"><i data-lucide="refresh-cw"></i> Sync Database</button>
                 </div>
             </section>
 
             <section id="view-keys" class="view hidden">
-                <div class="header-block flex-between">
-                    <h2><i data-lucide="key" class="header-icon neon-text"></i> KEYS & INVOICES</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                <div class="page-header">
+                    <h1>Invoices</h1>
+                    <p>Browse and manage your generated keys.</p>
                 </div>
-                
-                <div class="panel">
-                    <div class="panel-tools">
-                        <input type="text" id="keys-search" class="search-input" placeholder="Search ID or Email..." onkeyup="app.filterKeys()">
-                        <button class="btn-neon small" onclick="app.fetchKeys()">SYNC DB</button>
+
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="keys-search" placeholder="Search by ID or Email..." onkeyup="app.filterKeys()">
                     </div>
-                    <table class="data-table">
-                        <thead><tr><th>STATUS</th><th>ORDER ID</th><th>PRODUCT</th><th>KEY</th><th>ACTIONS</th></tr></thead>
+                    <div class="actions">
+                        <button class="btn outline" onclick="app.fetchData()"><i data-lucide="refresh-cw"></i> Refresh</button>
+                        <button class="btn outline"><i data-lucide="download"></i> Export</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STATUS</th>
+                                <th>ID</th>
+                                <th>PRODUCTS</th>
+                                <th>PRICE</th>
+                                <th>KEY</th>
+                                <th>PAYMENT</th>
+                                <th>E-MAIL</th>
+                            </tr>
+                        </thead>
                         <tbody id="keys-tbody"></tbody>
                     </table>
-                    <div class="pagination" id="keys-pagination"></div>
                 </div>
+                
+                <div class="pagination" id="keys-pagination"></div>
             </section>
 
-            <section id="view-stats" class="view hidden">
-                <div class="header-block flex-between">
-                    <h2><i data-lucide="activity" class="header-icon blue-text"></i> ANALYTICS</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+            <section id="view-detail" class="view hidden">
+                <button class="btn outline back-btn" onclick="app.navigate('keys', document.querySelector('[data-target=keys]'))">
+                    <i data-lucide="arrow-left"></i> Back to Invoices
+                </button>
+
+                <div class="detail-card">
+                    <div class="card-header"><i data-lucide="file-text"></i> Order Information</div>
+                    <div class="card-body">
+                        <div class="detail-row">
+                            <span class="label">ID</span>
+                            <span class="value monospace" id="det-id">...</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Status</span>
+                            <span class="badge green solid">Manually Completed</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Payment Method</span>
+                            <span class="value flex-align" id="det-gateway">Litecoin <i data-lucide="gem" class="icon-blue"></i></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Product Key</span>
+                            <span class="value monospace blue-text cursor-pointer" id="det-key" onclick="app.copyText(this.innerText)">...</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Total Paid</span>
+                            <span class="badge green outline" id="det-paid">+$0.10</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Created At</span>
+                            <span class="value" id="det-date">...</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="stats-cards">
-                    <div class="stat-box"><h4>TOTAL REVENUE</h4><h2 class="neon-text">$4,290.50</h2></div>
-                    <div class="stat-box"><h4>KEYS GENERATED</h4><h2 class="blue-text">1,402</h2></div>
-                    <div class="stat-box"><h4>ACTIVE CUSTOMERS</h4><h2 class="purple-text">892</h2></div>
-                </div>
-                
-                <div class="panel" style="margin-top: 2rem;">
-                    <h3>GROSS VOLUME (30 DAYS)</h3>
-                    <div style="height: 300px; margin-top: 1rem;"><canvas id="revenueChart"></canvas></div>
+
+                <div class="detail-card">
+                    <div class="card-header"><i data-lucide="user"></i> Customer Information</div>
+                    <div class="card-body">
+                        <div class="detail-row">
+                            <span class="label">E-mail Address</span>
+                            <span class="value" id="det-email">...</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Discord ID (Claimed By)</span>
+                            <span class="value monospace" id="det-discord">Not Claimed</span>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section id="view-crm" class="view hidden">
-                <div class="header-block flex-between">
-                    <h2><i data-lucide="users" class="header-icon purple-text"></i> CRM DATABASE</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                <div class="page-header">
+                    <h1>Customers</h1>
+                    <p>Real-time buyer database synced from your orders.</p>
                 </div>
 
-                <div class="panel">
-                    <div class="panel-tools">
-                        <input type="text" id="crm-search" class="search-input" placeholder="Search Customer..." onkeyup="app.filterCRM()">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="crm-search" placeholder="Search customer email..." onkeyup="app.filterCRM()">
                     </div>
-                    <table class="data-table">
-                        <thead><tr><th>CUSTOMER E-MAIL</th><th>TOTAL SPEND</th><th>ORDERS</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CUSTOMER E-MAIL</th>
+                                <th>TOTAL SPENT</th>
+                                <th>TOTAL ORDERS</th>
+                                <th>LAST ACTIVE</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
                         <tbody id="crm-tbody"></tbody>
                     </table>
-                    <div class="pagination" id="crm-pagination"></div>
+                </div>
+                <div class="pagination" id="crm-pagination"></div>
+            </section>
+
+            <section id="view-stats" class="view hidden">
+                <div class="page-header">
+                    <h1>Analytics</h1>
+                    <p>Financial overview generated from your database.</p>
+                </div>
+
+                <div class="detail-card" style="margin-bottom: 2rem;">
+                    <div class="card-header"><i data-lucide="trending-up"></i> Revenue Over Time</div>
+                    <div class="card-body" style="padding: 1.5rem; height: 350px;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
                 </div>
             </section>
 
             <section id="view-settings" class="view hidden">
-                <div class="header-block flex-between">
-                    <h2><i data-lucide="cpu" class="header-icon red-text"></i> CONFIGURATION</h2>
-                    <button class="btn-outline" onclick="app.navigate('home')">BACK</button>
+                <div class="page-header">
+                    <h1>Settings</h1>
+                    <p>Manage your backend infrastructure.</p>
                 </div>
-                
-                <div class="settings-grid">
-                    <div class="panel">
-                        <h3><i data-lucide="database"></i> UPSTASH REDIS</h3>
+
+                <div class="detail-card">
+                    <div class="card-header"><i data-lucide="database"></i> Upstash Configuration</div>
+                    <div class="card-body" style="padding: 1.5rem;">
                         <div class="form-group">
-                            <label>REST URL</label>
+                            <label>Redis REST URL</label>
                             <input type="password" value="https://eu1-liberal-donkey-39485.upstash.io">
                         </div>
                         <div class="form-group">
-                            <label>REST TOKEN</label>
+                            <label>Redis REST Token</label>
                             <input type="password" value="AZORT_SECRET_TOKEN_12345">
                         </div>
-                        <button class="btn-neon small">SAVE DB CONFIG</button>
-                    </div>
-
-                    <div class="panel">
-                        <h3><i data-lucide="bot"></i> DISCORD INTEGRATION</h3>
-                        <div class="form-group">
-                            <label>BOT TOKEN</label>
-                            <input type="password" placeholder="Paste Discord Bot Token">
-                        </div>
-                        <div class="form-group">
-                            <label>ADMIN ROLE ID</label>
-                            <input type="text" value="120394857203948572">
-                        </div>
-                        <button class="btn-neon small blue-bg">UPDATE BOT</button>
-                    </div>
-
-                    <div class="panel full-width">
-                        <h3><i data-lucide="shield"></i> SECURITY SETTINGS</h3>
-                        <div class="toggle-row">
-                            <div>
-                                <h4>MAINTENANCE MODE</h4>
-                                <p>Disables key redemption on the Discord Bot instantly.</p>
-                            </div>
-                            <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-                        </div>
-                        <div class="toggle-row">
-                            <div>
-                                <h4>STRICT IP LOCKING</h4>
-                                <p>Bans users automatically if multiple IPs are detected on one key.</p>
-                            </div>
-                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
-                        </div>
+                        <button class="btn solid">Save Database Config</button>
                     </div>
                 </div>
             </section>
 
-        </div>
-    </main>
-
-    <div id="side-drawer" class="drawer">
-        <div class="drawer-header">
-            <h3>ORDER DETAILS</h3>
-            <button class="icon-btn" onclick="app.closeDrawer()"><i data-lucide="x"></i></button>
-        </div>
-        <div class="drawer-content" id="drawer-data">
-            </div>
+        </main>
     </div>
-    <div id="drawer-overlay" class="drawer-overlay" onclick="app.closeDrawer()"></div>
 
     <script src="script.js"></script>
 </body>
