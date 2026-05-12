@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Invoices | Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
-    <div class="container">
+    <div class="main-container">
         
         <div id="view-table">
-            <div class="page-header">
-                <h1>Invoices</h1>
-                <p>Browse and manage your generated keys.</p>
+            <header class="page-header">
+                <div class="header-title">
+                    <i data-lucide="list"></i>
+                    <h1>SellAuth</h1>
+                </div>
+            </header>
+
+            <div class="content-header">
+                <h2>Invoices</h2>
+                <p class="subtitle">Browse and manage your invoices.</p>
             </div>
 
             <div class="table-controls">
                 <div class="tabs">
-                    <button class="active">Invoices</button>
+                    <button class="tab active">Invoices</button>
                 </div>
                 <div class="actions">
                     <button class="btn outline" onclick="fetchKeys()"><i data-lucide="refresh-cw"></i> Refresh</button>
@@ -28,85 +35,112 @@
                     <button class="btn outline"><i data-lucide="sliders-horizontal"></i> Filters</button>
                     <div class="search-box">
                         <i data-lucide="search"></i>
-                        <input type="text" id="searchInput" placeholder="Search by ID or Email...">
+                        <input type="text" id="searchInput" placeholder="Search by ID...">
                     </div>
                 </div>
             </div>
 
-            <div class="table-wrapper">
-                <table>
+            <div class="table-container">
+                <table id="mainTable">
                     <thead>
                         <tr>
                             <th>STATUS</th>
-                            <th>ID <i data-lucide="chevron-down" style="width: 12px; display: inline-block;"></i></th>
-                            <th>PRODUCT</th>
-                            <th>KEY</th>
+                            <th>ID <i data-lucide="chevron-down" class="sort-icon"></i></th>
+                            <th>PRODUCTS</th>
+                            <th>PRICE</th>
                             <th>PAID</th>
                             <th>PAYMENT</th>
                             <th>E-MAIL</th>
                         </tr>
                     </thead>
                     <tbody id="keyTable">
-                        <tr><td colspan="7" class="loading">Loading invoices...</td></tr>
+                        <tr><td colspan="7" class="loading-text">Loading invoices...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <div id="view-detail" style="display: none;">
-            <button class="btn outline back-btn" onclick="showTable()">
-                <i data-lucide="arrow-left"></i> Back to Invoices
-            </button>
+            <header class="page-header">
+                <div class="header-title">
+                    <i data-lucide="list"></i>
+                    <h1>SellAuth</h1>
+                </div>
+            </header>
 
-            <div class="detail-card">
+            <div class="content-header">
+                <h2>Invoice Details</h2>
+                <p class="subtitle">View the details of the invoice.</p>
+            </div>
+
+            <div class="detail-actions">
+                <button class="btn solid back-btn" onclick="showTable()">
+                    <i data-lucide="arrow-left"></i> Back
+                </button>
+            </div>
+
+            <div class="card">
                 <div class="card-header">
                     <i data-lucide="file-text"></i> Order Information
                 </div>
                 <div class="card-body">
-                    <div class="detail-row">
-                        <span class="label">ID</span>
-                        <span class="value monospace" id="det-id">...</span>
+                    <div class="list-row">
+                        <span class="row-label">ID</span>
+                        <span class="row-value monospace" id="det-id">...</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Status</span>
-                        <span class="badge green">Manually Completed</span>
+                    <div class="list-row">
+                        <span class="row-label">Status</span>
+                        <span class="row-value"><span class="badge badge-green outline">Manually Completed</span></span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Payment Method</span>
-                        <span class="value" id="det-gateway">Manual <i data-lucide="wallet" style="width: 14px; margin-left: 5px; color: #8b949e;"></i></span>
+                    <div class="list-row">
+                        <span class="row-label">Payment Method</span>
+                        <span class="row-value flex-align" id="det-gateway">
+                            Litecoin <i data-lucide="box" class="crypto-icon"></i>
+                        </span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Product Key</span>
-                        <span class="value monospace blue-text cursor-pointer" id="det-key" onclick="copyDetailKey()">...</span>
+                    <div class="list-row">
+                        <span class="row-label">Product Key</span>
+                        <span class="row-value monospace copy-text" id="det-key" onclick="copyKeyFromDetail()">...</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Total Paid</span>
-                        <span class="value text-green" id="det-paid">+$0.00</span>
+                    <div class="list-row">
+                        <span class="row-label">Total Price</span>
+                        <span class="row-value" id="det-price">$0.10</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Created At</span>
-                        <span class="value" id="det-date">...</span>
+                    <div class="list-row">
+                        <span class="row-label">Total Paid</span>
+                        <span class="row-value"><span class="badge badge-green solid" id="det-paid">+$0.10</span></span>
+                    </div>
+                    <div class="list-row">
+                        <span class="row-label">Created At</span>
+                        <span class="row-value" id="det-date">...</span>
                     </div>
                 </div>
             </div>
 
-            <div class="detail-card">
+            <div class="card">
                 <div class="card-header">
                     <i data-lucide="user"></i> Customer Information
                 </div>
                 <div class="card-body">
-                    <div class="detail-row">
-                        <span class="label">E-mail Address</span>
-                        <span class="value" id="det-email">...</span>
+                    <div class="list-row">
+                        <span class="row-label">E-mail Address</span>
+                        <span class="row-value" id="det-email">...</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="label">Discord ID (Claimed By)</span>
-                        <span class="value monospace" id="det-discord">Not Claimed</span>
+                    <div class="list-row">
+                        <span class="row-label">Discord ID (Claimed By)</span>
+                        <span class="row-value monospace" id="det-discord">Not Claimed</span>
+                    </div>
+                    <div class="list-row actions-row">
+                        <span class="row-label">Actions</span>
+                        <div class="action-buttons">
+                            <button class="btn outline blue-text"><i data-lucide="user"></i> View Customer</button>
+                            <button class="btn outline red-text"><i data-lucide="slash"></i> Blacklist E-mail</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
+        </div>
     </div>
 
     <script src="script.js"></script>
