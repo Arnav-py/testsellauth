@@ -1,53 +1,77 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Delivery Dashboard</title>
-    <style>
-      body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; color: #333; }
-      table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; }
-      th { background: #f4f4f4; padding: 12px; }
-      td { padding: 12px; border-bottom: 1px solid #ddd; }
-      code { background: #eee; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-    </style>
-  </head>
-  <body>
-    <h1>🔑 Delivery Dashboard</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Order ID</th>
-          <th>Product</th>
-          <th>Key Delivered</th>
-        </tr>
-      </thead>
-      <tbody id="keyTable">
-        <tr><td colspan="4">Loading keys...</td></tr>
-      </tbody>
-    </table>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azort | Delivery Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="toast" class="toast">
+        <i data-lucide="check-circle"></i> Key copied to clipboard!
+    </div>
 
-    <script>
-      // This grabs the keys from your database and puts them in the table
-      fetch('/api/keys')
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.getElementById('keyTable');
-          if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">No keys generated yet.</td></tr>';
-            return;
-          }
-          tbody.innerHTML = data.map(entry => `
-            <tr>
-              <td>${new Date(entry.timestamp).toLocaleString()}</td>
-              <td>${entry.orderId}</td>
-              <td>${entry.product}</td>
-              <td><code>${entry.key}</code></td>
-            </tr>
-          `).join('');
-        })
-        .catch(err => {
-          document.getElementById('keyTable').innerHTML = '<tr><td colspan="4">Error loading keys. Check Vercel logs.</td></tr>';
-        });
-    </script>
-  </body>
+    <div class="dashboard-container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon"><i data-lucide="shield"></i></div>
+                <h1>Azort <span>Dashboard</span></h1>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="searchInput" placeholder="Search orders, products, or keys...">
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i data-lucide="key"></i></div>
+                <div class="stat-info">
+                    <h3>Recent Keys</h3>
+                    <p id="stat-total">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i data-lucide="check"></i></div>
+                <div class="stat-info">
+                    <h3>System Status</h3>
+                    <p class="status-online">Online</p>
+                </div>
+            </div>
+        </div>
+
+        <main class="table-container">
+            <div class="table-header">
+                <h2>Delivery Logs</h2>
+                <button class="refresh-btn" onclick="fetchKeys()">
+                    <i data-lucide="refresh-cw" id="refreshIcon"></i> Refresh
+                </button>
+            </div>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Date Generated</th>
+                        <th>Order ID</th>
+                        <th>Product</th>
+                        <th>License Key</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="keyTable">
+                    <tr id="loadingRow">
+                        <td colspan="5" class="loading-state">
+                            <i data-lucide="loader" class="spinner"></i> Fetching secure data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
 </html>
