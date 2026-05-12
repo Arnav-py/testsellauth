@@ -3,384 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Azort | Command Center</title>
+    <title>Azort | Enterprise Command Center</title>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
-        /* --- CORE VARIABLES --- */
-        :root {
-            --bg-base: #050505;
-            --bg-surface: #0e0e0e;
-            --bg-glass: rgba(20, 20, 20, 0.7);
-            --border: #222;
-            --border-glow: rgba(59, 130, 246, 0.3);
-            
-            --text-main: #ededed;
-            --text-muted: #888;
-            
-            --brand-blue: #3b82f6;
-            --brand-green: #10b981;
-            --brand-red: #ef4444;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif; background-color: var(--bg-base);
-            color: var(--text-main); height: 100vh; overflow: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* --- GLOBAL ANIMATIONS --- */
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* --- 1. LOGIN SCREEN --- */
-        #auth-screen {
-            position: fixed; inset: 0; background: var(--bg-base);
-            display: flex; justify-content: center; align-items: center; z-index: 100;
-        }
-        .login-box {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            padding: 3rem; border-radius: 16px; text-align: center;
-            width: 400px; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-        .login-box h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px;}
-        .login-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 2rem; }
-        .pin-input {
-            width: 100%; background: var(--bg-base); border: 1px solid var(--border);
-            color: white; padding: 12px; border-radius: 8px; font-size: 16px;
-            text-align: center; letter-spacing: 4px; margin-bottom: 1rem; outline: none; transition: 0.3s;
-        }
-        .pin-input:focus { border-color: var(--brand-blue); box-shadow: 0 0 15px var(--border-glow); }
-        .login-btn {
-            width: 100%; background: var(--brand-blue); color: white; border: none;
-            padding: 12px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s;
-        }
-        .login-btn:hover { background: #2563eb; }
-        .error-msg { color: var(--brand-red); font-size: 12px; margin-top: 10px; display: none; }
-
-        /* --- 2. MAIN APP LAYOUT --- */
-        #app-screen { display: none; height: 100vh; flex-direction: column; }
-        
-        .topbar {
-            height: 60px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 2rem; background: var(--bg-glass); backdrop-filter: blur(10px);
-        }
-        .brand { font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 15px; }
-        .nav-actions { display: flex; gap: 15px; align-items: center; }
-        .sys-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-        .pulse { width: 8px; height: 8px; background: var(--brand-green); border-radius: 50%; box-shadow: 0 0 10px var(--brand-green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-        .view-container { flex: 1; overflow-y: auto; padding: 3rem 2rem; }
-        .view { display: none; max-width: 1200px; margin: 0 auto; }
-        .view.active { display: block; }
-
-        /* --- 3. LANDING DASHBOARD (BENTO BOXES) --- */
-        .greeting { margin-bottom: 3rem; }
-        .greeting h2 { font-size: 32px; font-weight: 600; margin-bottom: 5px; }
-        .greeting p { color: var(--text-muted); }
-
-        .bento-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;
-        }
-        .bento-card {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 16px; padding: 2.5rem; cursor: pointer;
-            position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        /* The Hover 3D & Glow Effect */
-        .bento-card:hover {
-            transform: translateY(-5px) scale(1.01);
-            border-color: var(--brand-blue);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--border-glow);
-        }
-        .bento-card::before {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            transition: left 0.5s;
-        }
-        .bento-card:hover::before { left: 100%; }
-        
-        .bento-icon {
-            width: 50px; height: 50px; border-radius: 12px; background: rgba(59, 130, 246, 0.1);
-            color: var(--brand-blue); display: flex; align-items: center; justify-content: center;
-            margin-bottom: 1.5rem; border: 1px solid rgba(59, 130, 246, 0.2);
-        }
-        .bento-card.stats .bento-icon { background: rgba(16, 185, 129, 0.1); color: var(--brand-green); border-color: rgba(16, 185, 129, 0.2); }
-        .bento-card.stats:hover { border-color: var(--brand-green); box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(16, 185, 129, 0.2); }
-
-        .bento-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-        .bento-desc { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
-
-        /* --- 4. TOOL VIEWS (Keys, Stats, etc) --- */
-        .tool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .back-btn {
-            background: transparent; border: 1px solid var(--border); color: var(--text-main);
-            padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
-        }
-        .back-btn:hover { background: var(--border); }
-
-        /* Placeholder Tables & Charts */
-        .data-panel { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
-        td { padding: 16px 12px; border-bottom: 1px solid var(--border); font-size: 14px; white-space: nowrap; }
-        tr:hover { background: rgba(255,255,255,0.02); }
-        code { background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; color: var(--brand-blue); }
-
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <div id="auth-screen" class="fade-in">
-        <div class="login-box">
-            <h1><i data-lucide="shield-check" style="color: #3b82f6;"></i> Azort Secure</h1>
-            <p>Command Center Authentication</p>
-            <input type="password" id="passwordInput" class="pin-input" placeholder="••••••••" autocomplete="off">
-            <button class="login-btn" onclick="attemptLogin()">Unlock System</button>
-            <p id="errorMsg" class="error-msg">Access Denied. Incorrect passphrase.</p>
+    <div id="toast-container"></div>
+    <div id="loader-overlay" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="auth-guard">
+        <div class="auth-box" id="auth-box">
+            <div class="auth-icon"><i data-lucide="lock"></i></div>
+            <h1>System Locked</h1>
+            <p>Enter administrative credentials.</p>
+            
+            <div class="input-group">
+                <input type="password" id="auth-input" placeholder="Enter Passphrase" autocomplete="off">
+                <div class="focus-border"></div>
+            </div>
+            
+            <button id="auth-btn" class="btn-primary" onclick="app.authenticate()">Unlock System</button>
+            <p id="auth-error" class="error-msg">Invalid credentials. Attempt logged.</p>
         </div>
     </div>
 
-    <div id="app-screen">
+    <main id="app-root" class="hidden">
         
-        <header class="topbar">
+        <nav class="topbar">
             <div class="brand">
-                <i data-lucide="command"></i> Azort
+                <div class="brand-logo"><i data-lucide="shield-check"></i></div>
+                <span>Azort <strong>OS</strong></span>
             </div>
-            <div class="nav-actions">
-                <div class="sys-status"><div class="pulse"></div> System Online</div>
+            <div class="topbar-right">
+                <div class="status-indicator">
+                    <span class="pulse"></span> System Live
+                </div>
+                <button class="icon-btn" onclick="app.logout()"><i data-lucide="log-out"></i></button>
             </div>
-        </header>
+        </nav>
 
-        <div class="view-container">
+        <div class="app-content">
             
-            <div id="view-home" class="view active slide-up">
-                <div class="greeting">
-                    <h2>Welcome back.</h2>
-                    <p>Select a module to manage your infrastructure.</p>
+            <section id="view-home" class="view">
+                <header class="view-header stagger-1">
+                    <h2>Command Center</h2>
+                    <p>Infrastructure overview and quick actions.</p>
+                </header>
+
+                <div class="bento-grid stagger-2">
+                    <div class="bento-card" onclick="app.navigate('keys')">
+                        <div class="bento-icon blue"><i data-lucide="key"></i></div>
+                        <h3>License Keys</h3>
+                        <p>Live feed of all generated keys, redemptions, and order flow from your databases.</p>
+                        <div class="bento-footer">Active <i data-lucide="arrow-right"></i></div>
+                    </div>
+
+                    <div class="bento-card" onclick="app.navigate('stats')">
+                        <div class="bento-icon green"><i data-lucide="bar-chart-3"></i></div>
+                        <h3>Analytics</h3>
+                        <p>Revenue graphs, payment distributions, and system volume metrics.</p>
+                        <div class="bento-footer">Live <i data-lucide="arrow-right"></i></div>
+                    </div>
+
+                    <div class="bento-card" onclick="app.navigate('crm')">
+                        <div class="bento-icon purple"><i data-lucide="users"></i></div>
+                        <h3>Customer CRM</h3>
+                        <p>Manage buyers, view purchase histories, and configure access control lists.</p>
+                        <div class="bento-footer">Secure <i data-lucide="arrow-right"></i></div>
+                    </div>
+
+                    <div class="bento-card" onclick="app.navigate('settings')">
+                        <div class="bento-icon gray"><i data-lucide="settings"></i></div>
+                        <h3>System Configuration</h3>
+                        <p>Database tokens, webhook integrations, and API security policies.</p>
+                        <div class="bento-footer">Restricted <i data-lucide="arrow-right"></i></div>
+                    </div>
                 </div>
+            </section>
 
-                <div class="bento-grid">
-                    <div class="bento-card" onclick="navigate('keys')">
-                        <div class="bento-icon"><i data-lucide="key"></i></div>
-                        <div class="bento-title">License Keys</div>
-                        <div class="bento-desc">Manage generated keys, view redemption status, and track live order flow from SellAuth.</div>
-                    </div>
-
-                    <div class="bento-card stats" onclick="navigate('stats')">
-                        <div class="bento-icon"><i data-lucide="bar-chart-3"></i></div>
-                        <div class="bento-title">Analytics</div>
-                        <div class="bento-desc">View revenue graphs, payment method distributions, and automated sales insights.</div>
-                    </div>
-
-                    <div class="bento-card" onclick="navigate('customers')">
-                        <div class="bento-icon"><i data-lucide="users"></i></div>
-                        <div class="bento-title">Customer CRM</div>
-                        <div class="bento-desc">View buyer history, Discord IDs, and manage IP/Email blacklists instantly.</div>
-                    </div>
-
-                    <div class="bento-card" onclick="navigate('settings')">
-                        <div class="bento-icon"><i data-lucide="settings"></i></div>
-                        <div class="bento-title">System Settings</div>
-                        <div class="bento-desc">Configure Upstash tokens, Discord bot parameters, and manual key generation.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-keys" class="view">
-                <div class="tool-header slide-up">
+            <section id="view-keys" class="view hidden">
+                <header class="view-header flex-between">
                     <div>
-                        <h2><i data-lucide="key" style="vertical-align: middle; margin-right: 8px;"></i> License Keys</h2>
-                        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Live feed from database</p>
+                        <h2><i data-lucide="key" class="header-icon"></i> Invoice & Keys</h2>
+                        <p>Monitoring secure key generation.</p>
                     </div>
-                    <button class="back-btn" onclick="navigate('home')"><i data-lucide="arrow-left"></i> Dashboard</button>
+                    <button class="btn-outline" onclick="app.navigate('home')"><i data-lucide="arrow-left"></i> Back</button>
+                </header>
+
+                <div class="controls-bar">
+                    <div class="search-wrap">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="key-search" placeholder="Search ID, Email, or Product...">
+                    </div>
+                    <button class="btn-outline" onclick="app.fetchKeys()"><i data-lucide="refresh-cw"></i> Sync</button>
                 </div>
-                
-                <div class="data-panel slide-up" style="animation-delay: 0.1s;">
+
+                <div class="table-card">
                     <table>
                         <thead>
-                            <tr><th>Order ID</th><th>Product</th><th>Status</th><th>Key</th></tr>
+                            <tr>
+                                <th>Status</th><th>Order ID</th><th>Product</th><th>Price</th><th>License Key</th><th>Customer</th>
+                            </tr>
                         </thead>
-                        <tbody id="keysTableBody">
-                            <tr><td colspan="4" style="text-align:center; color:#888;">Fetching keys...</td></tr>
-                        </tbody>
+                        <tbody id="keys-tbody">
+                            </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
 
-            <div id="view-stats" class="view">
-                <div class="tool-header slide-up">
+            <section id="view-stats" class="view hidden">
+                <header class="view-header flex-between">
                     <div>
-                        <h2><i data-lucide="bar-chart-3" style="vertical-align: middle; margin-right: 8px;"></i> Analytics</h2>
+                        <h2><i data-lucide="bar-chart-3" class="header-icon"></i> Analytics</h2>
+                        <p>Financial and system metrics.</p>
                     </div>
-                    <button class="back-btn" onclick="navigate('home')"><i data-lucide="arrow-left"></i> Dashboard</button>
+                    <button class="btn-outline" onclick="app.navigate('home')"><i data-lucide="arrow-left"></i> Back</button>
+                </header>
+                
+                <div class="stats-grid">
+                    <div class="chart-card large">
+                        <h3>Gross Volume (7 Days)</h3>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-card small">
+                        <h3>Gateways</h3>
+                        <canvas id="gatewayChart"></canvas>
+                    </div>
                 </div>
-                <div class="data-panel slide-up" style="height: 400px; display: flex; align-items: center; justify-content: center;">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-            </div>
+            </section>
 
-            <div id="view-customers" class="view">
-                <div class="tool-header slide-up">
-                    <h2><i data-lucide="users" style="vertical-align: middle; margin-right: 8px;"></i> CRM</h2>
-                    <button class="back-btn" onclick="navigate('home')"><i data-lucide="arrow-left"></i> Dashboard</button>
+            <section id="view-crm" class="view hidden">
+                <header class="view-header flex-between">
+                    <h2><i data-lucide="users" class="header-icon"></i> Customer CRM</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">Back</button>
+                </header>
+                <div class="empty-state">
+                    <i data-lucide="database"></i><p>CRM Module Initializing...</p>
                 </div>
-                <div class="data-panel slide-up" style="text-align: center; color: var(--text-muted); padding: 5rem 0;">
-                    <i data-lucide="user-x" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
-                    <p>Customer database syncing...</p>
-                </div>
-            </div>
+            </section>
 
-            <div id="view-settings" class="view">
-                <div class="tool-header slide-up">
-                    <h2><i data-lucide="settings" style="vertical-align: middle; margin-right: 8px;"></i> Settings</h2>
-                    <button class="back-btn" onclick="navigate('home')"><i data-lucide="arrow-left"></i> Dashboard</button>
+            <section id="view-settings" class="view hidden">
+                <header class="view-header flex-between">
+                    <h2><i data-lucide="settings" class="header-icon"></i> Settings</h2>
+                    <button class="btn-outline" onclick="app.navigate('home')">Back</button>
+                </header>
+                <div class="empty-state">
+                    <i data-lucide="lock"></i><p>Configuration Locked by SuperAdmin.</p>
                 </div>
-                <div class="data-panel slide-up" style="text-align: center; color: var(--text-muted); padding: 5rem 0;">
-                    <i data-lucide="database" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
-                    <p>Backend configurations locked.</p>
-                </div>
-            </div>
+            </section>
 
         </div>
-    </div>
+    </main>
 
-    <script>
-        // Init icons
-        lucide.createIcons();
-
-        // --- AUTHENTICATION LOGIC ---
-        // Change this to whatever you want. 
-        const MASTER_PASSWORD = "azort"; 
-
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') attemptLogin();
-        });
-
-        function attemptLogin() {
-            const input = document.getElementById('passwordInput').value;
-            if (input === MASTER_PASSWORD) {
-                // Fade out login, fade in app
-                const auth = document.getElementById('auth-screen');
-                auth.style.opacity = '0';
-                setTimeout(() => {
-                    auth.style.display = 'none';
-                    document.getElementById('app-screen').style.display = 'flex';
-                    // Force a re-animation of the home screen
-                    navigate('home');
-                    initChart(); // Draw stats graph
-                }, 400);
-            } else {
-                const err = document.getElementById('errorMsg');
-                err.style.display = 'block';
-                document.getElementById('passwordInput').value = '';
-            }
-        }
-
-        // --- SPA ROUTER LOGIC ---
-        // This makes the single file act like multiple URLs (/#keys, /#stats)
-        function navigate(viewName) {
-            // Update URL hash without refreshing
-            window.location.hash = viewName;
-            
-            // Hide all views
-            const views = document.querySelectorAll('.view');
-            views.forEach(v => {
-                v.classList.remove('active');
-                // Remove and re-add animation classes to trigger them every time
-                v.classList.remove('fade-in');
-            });
-
-            // Show target view
-            const target = document.getElementById('view-' + viewName);
-            if (target) {
-                target.classList.add('active');
-                target.classList.add('fade-in'); // Play fade in animation
-
-                // If loading keys view, fetch data
-                if(viewName === 'keys') fetchKeys();
-            } else {
-                // Fallback to home
-                document.getElementById('view-home').classList.add('active');
-                window.location.hash = 'home';
-            }
-        }
-
-        // Handle user clicking back/forward on their browser
-        window.addEventListener('hashchange', () => {
-            const view = window.location.hash.replace('#', '') || 'home';
-            navigate(view);
-        });
-
-        // --- KEYS API FETCHING (From your previous code) ---
-        async function fetchKeys() {
-            const tbody = document.getElementById('keysTableBody');
-            try {
-                const res = await fetch('/api/keys');
-                const data = await res.json();
-                
-                if(!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No records found.</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = data.map(entry => {
-                    let item = typeof entry === 'string' ? JSON.parse(entry) : entry;
-                    return `
-                        <tr>
-                            <td style="color:#ededed;">#${item.orderId || 'MANUAL'}</td>
-                            <td>${item.product || 'Unknown'}</td>
-                            <td><span style="color:var(--brand-green); background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:4px; font-size:12px;">Completed</span></td>
-                            <td><code>${item.key ? item.key.substring(0,15)+'...' : 'N/A'}</code></td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--brand-red);">API Connection Failed</td></tr>`;
-            }
-        }
-
-        // --- STATS MOCKUP (Chart.js) ---
-        let chartRendered = false;
-        function initChart() {
-            if(chartRendered) return;
-            const ctx = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Gross Volume ($)',
-                        data: [12, 19, 15, 25, 22, 30, 45],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { grid: { color: '#222' }, ticks: { color: '#888' } },
-                        x: { grid: { display: false }, ticks: { color: '#888' } }
-                    }
-                }
-            });
-            chartRendered = true;
-        }
-
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
